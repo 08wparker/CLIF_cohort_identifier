@@ -8,11 +8,9 @@ Please refer to the online [CLIF data dictionary](https://clif-consortium.github
 
 ## Instructions:
 
-## 1. Set up the project environment
-Example for R:
-run `00_renv_restore.R` folder
+### 1. Set up the project environment by running `00_renv_restore.R` 
  
-## 2. Run `app.R` in the `CLIF_cohort_ID_application` folder
+### 2. Run `app.R` in the `CLIF_cohort_ID_application` folder
 
 
 
