@@ -14,6 +14,9 @@ tables <- c("vitals", "labs",
 ui <- fluidPage(
   titlePanel("CLIF Cohort Identification for ATS 2024 projects"),
   
+  # Add description under the title
+  HTML("<p>This app allows users to filter a cohort of <strong>inpatient  hospitalizations</strong>  from the CLIF dataset based on user-defined criteria. It performs cohort identification, filtering of hospitalization data, and generates a summary table of key characteristics (Table 1) for the cohort. Files are saved in a newly created study_cohort folder, along with a config JSON file that saves the user selections.</p>"),
+  
   sidebarLayout(
     sidebarPanel(
       # User input for site name
