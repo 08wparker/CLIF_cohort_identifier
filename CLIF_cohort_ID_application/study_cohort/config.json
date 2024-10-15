@@ -1,0 +1,13 @@
+{
+  "site_name": "Example Site",
+  "tables_path": "/Users/williamparker/Desktop/CLIF_tables/",
+  "file_type": "parquet",
+  "date_range": {
+    "start": "2020-01-01",
+    "end": "2021-12-31"
+  },
+  "include_pediatric": false,
+  "include_er_deaths": true,
+  "drop_missing_dttm": true,
+  "selected_tables": ["vitals", "labs", "medication_admin_continuous", "respiratory_support", "position", "microbiology_culture"]
+}

@@ -1,8 +1,8 @@
-# *CLIF Project Title*
+# CLIF cohort identification application
 
 ## Objective
 
-*Describe the project objective*
+Identify a cohort of patients in your Common Longitudinal ICU data Format according to common inclusion and exclusion criteria for observational studies of critically illness 
 
 ## Required CLIF tables and fields
 
@@ -22,12 +22,9 @@ The following tables are required:
    - `med_category` = "norepinephrine", "epinephrine", "phenylephrine", "vasopressin", "dopamine", "angiotensin", "nicardipine", "nitroprusside", "clevidipine", "cisatracurium"
 6. **respiratory_support**: `hospitalization_id`, `recorded_dttm`, `device_category`, `mode_category`, `tracheostomy`, `fio2_set`, `lpm_set`, `resp_rate_set`, `peep_set`, `resp_rate_obs`
 
-## Cohort identification
-*Describe study cohort inclusion and exclusion criteria here*
-
 ## Expected Results
 
-*Describe the output of the analysis. The final project results should be saved in the [`output/final`](output/README.md) directory.*
+Your filtered cohort will be returned to [`cohort`](output/README.md) directory.*
 
 ## Detailed Instructions for running the project
 
