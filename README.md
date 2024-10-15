@@ -10,26 +10,9 @@ Please refer to the online [CLIF data dictionary](https://clif-consortium.github
 
 *List all required tables for the project here, and provide a brief rationale for why they are required.*
 
-Example:
-The following tables are required:
-1. **patient**: `patient_id`, `race_category`, `ethnicity_category`, `sex_category`
-2. **hospitalization**: `patient_id`, `hospitalization_id`, `admission_dttm`, `discharge_dttm`, `age_at_admission`
-3. **vitals**: `hospitalization_id`, `recorded_dttm`, `vital_category`, `vital_value`
-   - `vital_category` = 'heart_rate', 'resp_rate', 'sbp', 'dbp', 'map', 'resp_rate', 'spo2'
-4. **labs**: `hospitalization_id`, `lab_result_dttm`, `lab_category`, `lab_value`
-   - `lab_category` = 'lactate'
-5. **medication_admin_continuous**: `hospitalization_id`, `admin_dttm`, `med_name`, `med_category`, `med_dose`, `med_dose_unit`
-   - `med_category` = "norepinephrine", "epinephrine", "phenylephrine", "vasopressin", "dopamine", "angiotensin", "nicardipine", "nitroprusside", "clevidipine", "cisatracurium"
-6. **respiratory_support**: `hospitalization_id`, `recorded_dttm`, `device_category`, `mode_category`, `tracheostomy`, `fio2_set`, `lpm_set`, `resp_rate_set`, `peep_set`, `resp_rate_obs`
-
-## Expected Results
-
-Your filtered cohort will be returned to [`cohort`](output/README.md) directory.*
-
 ## Detailed Instructions for running the project
 
 ## 1. Update `config/config.json`
-Follow instructions in the [config/README.md](config/README.md) file for detailed configuration steps.
 
 ## 2. Set up the project environment
 
