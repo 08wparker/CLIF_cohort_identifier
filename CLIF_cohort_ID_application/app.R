@@ -20,7 +20,7 @@ ui <- fluidPage(
       textInput("site_name", "Site Name:", value = "Example Site"),
       
       # User input for the path to the Parquet/CSV files (tables path)
-      textInput("tables_path", "Tables Path (Directory):", value = "/Users/williamparker/Desktop/CLIF_tables/"),
+      textInput("tables_path", "Tables Path (Directory):", value = "/path/to/CLIF_tables/"),
 
       # File type selection (only parquet and csv)
       selectInput("file_type", "File Type:", choices = c("parquet", "csv"), selected = "parquet"),
