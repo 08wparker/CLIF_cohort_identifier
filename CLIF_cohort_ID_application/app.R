@@ -15,7 +15,7 @@ ui <- fluidPage(
   titlePanel("CLIF Cohort Identification for ATS 2024 projects"),
   
   # Add description under the title
-  HTML("<p>This app allows users to filter a cohort of <strong>inpatient  hospitalizations</strong>  from the CLIF dataset based on user-defined criteria. It performs cohort identification, filtering of hospitalization data, and generates a summary table of key characteristics (Table 1) for the cohort. Files are saved in a newly created study_cohort folder, along with a config JSON file that saves the user selections.</p>"),
+  HTML("<p>This app allows users to filter a cohort of <strong>inpatient  hospitalizations</strong>  from the CLIF dataset based on user-defined criteria. It performs cohort identification, filtering of hospitalization data, and generates a summary table of key characteristics (Table 1) for the cohort. Files are saved in a newly created study_cohort folder in the tables path directory, along with a config JSON file that saves the user selections.</p>"),
   
   sidebarLayout(
     sidebarPanel(
@@ -27,6 +27,9 @@ ui <- fluidPage(
 
       # File type selection (only parquet and csv)
       selectInput("file_type", "File Type:", choices = c("parquet", "csv"), selected = "parquet"),
+      
+      # output folder specification
+      textInput("output_folder", "Output folder name:", value = "example_study_cohort"),
       
       # add title "Data Filters"
       HTML("<p><strong>Filtering options:</strong></p>"),
@@ -75,7 +78,7 @@ server <- function(input, output, session) {
       site_name <- input$site_name
       tables_path <- input$tables_path
       file_type <- input$file_type
-      save_path <- file.path("study_cohort")
+      save_path <- paste0(tables_path, input$output_folder)
       
       # Create the directory to store filtered files if it doesn't exist
       if (!dir.exists(save_path)) {
