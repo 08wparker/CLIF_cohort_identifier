@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyFiles)
 library(tidyverse)
 library(arrow)
 library(gtsummary)
@@ -10,26 +11,65 @@ tables <- c("vitals", "labs",
             "respiratory_support", "position", "dialysis", 
             "microbiology_culture")
 
+
+# List of sites from the provided image
+site_names <- c(
+  "Emory University",
+  "Johns Hopkins Health System",
+  "Northwestern University",
+  "Oregon Health & Science University",
+  "RUSH University",
+  "University of Chicago",
+  "University of Michigan",
+  "University of Minnesota"
+)
+
 # Define the UI
 ui <- fluidPage(
   titlePanel("CLIF Cohort Identification for ATS 2024 projects"),
   
+  # Custom CSS for buttons
+  tags$head(
+    tags$style(HTML("
+      #identifyCohort, #tables_dir {
+        background-color: maroon;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      
+      #identifyCohort:hover, #tables_dir:hover {
+        background-color: darkred;
+      }
+    "))
+  ),
+  
   # Add description under the title
-  HTML("<p>This app allows users to filter a cohort of <strong>inpatient  hospitalizations</strong>  from the CLIF dataset based on user-defined criteria. It performs cohort identification, filtering of hospitalization data, and generates a summary table of key characteristics (Table 1) for the cohort. Files are saved in a newly created study_cohort folder in the tables path directory, along with a config JSON file that saves the user selections.</p>"),
+  HTML("<p>This app allows users to filter a cohort of <strong>inpatient  hospitalizations</strong>  from the CLIF dataset based on user-defined criteria. It performs cohort identification, filtering of hospitalization data, and generates a summary table of key characteristics (Table 1) for the cohort. Files are saved in a newly created study_cohort folder in the tables path directory. The app also creates a config JSON file that saves the user selections.</p>"),
   
   sidebarLayout(
     sidebarPanel(
-      # User input for site name
-      textInput("site_name", "Site Name:", value = "Example Site"),
+      # Site Name (select input from pre-defined list)
+      selectInput("site_name", "Site Name:", choices = site_names, selected = NULL),
       
-      # User input for the path to the Parquet/CSV files (tables path)
-      textInput("tables_path", "Tables Path (Directory):", value = "/path/to/tables/"),
+      
+      # Add description under the title
+      HTML("<p><strong>CLIF tables location:<strong></p>"),
+      
+      # GUI to select the folder for the tables path
+      shinyDirButton("tables_dir", "Choose Tables Directory", 
+                     "Please select the directory containing the CLIF tables"),
+      
+      # Display the selected directory
+      verbatimTextOutput("tables_path"),
 
       # File type selection (only parquet and csv)
       selectInput("file_type", "File Type:", choices = c("parquet", "csv"), selected = "parquet"),
       
       # output folder specification
-      textInput("output_folder", "Output folder name:", value = "example_study_cohort"),
+      textInput("output_folder", "Output folder name:", value = "Sepsis_study_cohort"),
       
       # add title "Data Filters"
       HTML("<p><strong>Filtering options:</strong></p>"),
@@ -47,18 +87,22 @@ ui <- fluidPage(
       # Table selection with ADT forced to be selected
       checkboxGroupInput("selectedTables", "Select Tables to be filtered:",
                          choices = tables,
-                         selected = c("vitals", "labs")),
+                         selected = c("vitals", "labs", 
+                                      "medication_admin_continuous", "medication_admin_intermittent", 
+                                      "respiratory_support", 
+                                      "microbiology_culture")),
       
       helpText("Patient, Hospitalization, and ADT are required."),
       
-      helpText("Remaining conceptual CLIF tables not yet implemented."),
-      # Button to trigger cohort identification
-      actionButton("identifyCohort", "Identify Cohort")
+      helpText("Remaining conceptual CLIF tables not yet implemented.")
+
     ),
     
     mainPanel(
       verbatimTextOutput("filePaths"),
       verbatimTextOutput("saveStatus"),  # This will display the success message
+      # Button to trigger cohort identification
+      actionButton("identifyCohort", "Identify Cohort"),
       gt_output("summaryTable")  
     )
   )
@@ -68,6 +112,21 @@ ui <- fluidPage(
 # Define the server logic
 server <- function(input, output, session) {
   
+  # Enable file system access with shinyFiles
+  shinyDirChoose(input, "tables_dir", roots = c(home = "~"), session = session)
+  
+  # Reactively get the tables directory path
+  tables_dir <- reactive({
+    if (is.null(input$tables_dir)) return(NULL)
+    return(parseDirPath(roots = c(home = "~"), input$tables_dir))
+  })
+  
+  # Display the selected directory
+  output$tables_path <- renderPrint({
+    req(tables_dir())
+    cat(tables_dir())
+  })
+  
   # Event that triggers cohort identification when the button is clicked
   observeEvent(input$identifyCohort, {
     
@@ -76,9 +135,9 @@ server <- function(input, output, session) {
       
       # Fetch user inputs for configuration
       site_name <- input$site_name
-      tables_path <- input$tables_path
+      tables_path <- tables_dir()  # Get the selected directory path
       file_type <- input$file_type
-      save_path <- paste0(tables_path, input$output_folder)
+      save_path <- file.path(tables_path, input$output_folder)
       
       # Create the directory to store filtered files if it doesn't exist
       if (!dir.exists(save_path)) {
@@ -152,6 +211,13 @@ server <- function(input, output, session) {
       # Step 0.3: Save user settings as a JSON file
       incProgress(0.15, detail = "Saving configuration settings...")
       
+      # Define the config file path (modify according to the correct structure)
+      config_path <- file.path("../../config")
+      
+      # Create the directory if it doesn't exist
+      if (!dir.exists(config_path)) {
+        dir.create(config_path, recursive = TRUE)
+      }
       # Collect user settings
       user_settings <- list(
         site_name = site_name,
@@ -165,8 +231,7 @@ server <- function(input, output, session) {
       )
       
       # Save the settings to a JSON file
-      write_json(user_settings, file.path(save_path, "config.json"), pretty = TRUE, auto_unbox = TRUE)
-      
+      write_json(user_settings, file.path(config_path, "config.json"), pretty = TRUE, auto_unbox = TRUE)
       
       
       # Step 1: Filtering hospitalization table by time and age
@@ -175,10 +240,11 @@ server <- function(input, output, session) {
       # Initialize a list to store the filtered tables
       tables_to_filter <- list()
       
-      # Load the patient, hospitalization, and ADT tables
-      tables_to_filter$clif_patient <- open_dataset(paste0(tables_path, "clif_patient.parquet"))
-      tables_to_filter$clif_hospitalization <- open_dataset(paste0(tables_path, "clif_hospitalization.parquet"))
-      tables_to_filter$clif_adt <- open_dataset(paste0(tables_path, "clif_adt.parquet"))
+      # When loading the patient, hospitalization, and ADT tables, use file.path() for correct path concatenation
+      tables_to_filter$clif_patient <- open_dataset(file.path(tables_path, "clif_patient.parquet"))
+      tables_to_filter$clif_hospitalization <- open_dataset(file.path(tables_path, "clif_hospitalization.parquet"))
+      tables_to_filter$clif_adt <- open_dataset(file.path(tables_path, "clif_adt.parquet"))
+      
       
       ## apply admission date time filter
       start_date <- input$dateRange[1]
@@ -198,8 +264,7 @@ server <- function(input, output, session) {
       
       # Step 2: apply ADT criteria filters
       incProgress(0.4, detail = "Filtering ADT table...")
-      clif_adt <- open_dataset(paste0(tables_path, "clif_adt.parquet"))
-      
+
       inpatient_hospitalization_ids <- tables_to_filter$clif_adt %>%
         filter(location_category %in% c("Ward", "ICU")) %>%
         filter(hospitalization_id %in% cohort_hospitalization_ids) %>%
@@ -238,8 +303,8 @@ server <- function(input, output, session) {
       # Iterate over the user-selected tables and filter them based on the cohort_hospitalization_ids
       for (table_name in selected_tables) {
         
-        # Load the dataset for the current table
-        tables_to_filter[[paste0("clif_", table_name)]] <- open_dataset(paste0(tables_path, "clif_", table_name, ".parquet"))
+        # Load the dataset for the current table using file.path()
+        tables_to_filter[[paste0("clif_", table_name)]] <- open_dataset(file.path(tables_path, paste0("clif_", table_name, ".parquet")))
         
         # Apply the filtering on hospitalization_id
         tables_to_filter[[paste0("clif_", table_name, "_cohort")]] <- tables_to_filter[[paste0("clif_", table_name)]] %>%
@@ -338,7 +403,7 @@ server <- function(input, output, session) {
   # Optionally output the file paths or error messages
   output$filePaths <- renderPrint({
     cat("Site Name:", input$site_name, "\n")
-    cat("Tables Path:", input$tables_path, "\n")
+    cat("Tables Path:", tables_dir(), "\n")
     cat("File Type:", input$file_type, "\n")
   })
 }
