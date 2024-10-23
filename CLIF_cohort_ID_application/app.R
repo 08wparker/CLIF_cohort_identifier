@@ -58,9 +58,22 @@ ui <- fluidPage(
       # Add description under the title
       HTML("<p><strong>CLIF tables location:<strong></p>"),
       
-      # GUI to select the folder for the tables path
-      shinyDirButton("tables_dir", "Choose Tables Directory", 
-                     "Please select the directory containing the CLIF tables"),
+      # Option to either select directory or type the path
+      radioButtons("path_input_mode", "How would you like to specify the CLIF tables path?",
+                   choices = c("Navigate to folder" = "navigate", 
+                               "Type the path manually" = "manual")),
+      
+      # Conditionally show file navigation or manual text input for tables_path
+      conditionalPanel(
+        condition = "input.path_input_mode == 'navigate'",
+        shinyDirButton("tables_dir", "Choose Tables Directory", 
+                       "Please select the directory containing the CLIF tables"),
+        verbatimTextOutput("tables_path")
+      ),
+      conditionalPanel(
+        condition = "input.path_input_mode == 'manual'",
+        textInput("manual_tables_path", "Tables Path (Type here):", value = "")
+      ),
       
       # Display the selected directory
       verbatimTextOutput("tables_path"),
@@ -113,15 +126,18 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # Enable file system access with shinyFiles
-  shinyDirChoose(input, "tables_dir", roots = c(home = "~", root = "/"), session = session)
+  shinyDirChoose(input, "tables_dir", roots = c(home = "~"), session = session)
   
-  # Reactively get the tables directory path
+  # Reactively get the tables directory path from navigation or text input
   tables_dir <- reactive({
-    if (is.null(input$tables_dir)) return(NULL)
-    return(parseDirPath(roots = c(home = "~"), input$tables_dir))
+    if (input$path_input_mode == "navigate") {
+      return(parseDirPath(roots = c(home = "~"), input$tables_dir))
+    } else {
+      return(input$manual_tables_path)  # Return the manually typed path
+    }
   })
   
-  # Display the selected directory
+  # Display the selected directory when navigating
   output$tables_path <- renderPrint({
     req(tables_dir())
     cat(tables_dir())
